@@ -6,20 +6,23 @@ from pydantic import BaseModel, field_serializer, field_validator
 from sqlalchemy import Text
 from sqlmodel import JSON, Column, Field, Relationship, SQLModel
 
+from langflow.services.database.models.base import (TablePrefixBase,
+                                                    get_table_name_with_prefix)
+
 if TYPE_CHECKING:
     from langflow.services.database.models.flow.model import Flow
 
 from langflow.utils.util_strings import truncate_long_strings
 
 
-class VertexBuildBase(SQLModel):
+class VertexBuildBase(TablePrefixBase):
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     id: str = Field(nullable=False)
     data: dict | None = Field(default=None, sa_column=Column(JSON))
     artifacts: dict | None = Field(default=None, sa_column=Column(JSON))
     params: str | None = Field(default=None, sa_column=Column(Text, nullable=True))
     valid: bool = Field(nullable=False)
-    flow_id: UUID = Field(foreign_key="flow.id")
+    flow_id: UUID = Field(foreign_key=f"{get_table_name_with_prefix('flow')}.id")
 
     # Needed for Column(JSON)
     class Config:
@@ -57,7 +60,9 @@ class VertexBuildBase(SQLModel):
 class VertexBuildTable(VertexBuildBase, table=True):  # type: ignore[call-arg]
     __tablename__ = "vertex_build"
     build_id: UUID | None = Field(default_factory=uuid4, primary_key=True)
-    flow: "Flow" = Relationship(back_populates="vertex_builds")
+    flow: "Flow" = Relationship(back_populates="vertex_builds", sa_relationship_kwargs={
+        "primaryjoin": "VertexBuildTable.flow_id == Flow.id"
+    })
 
 
 class VertexBuildMapModel(BaseModel):

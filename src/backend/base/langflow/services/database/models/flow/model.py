@@ -14,18 +14,21 @@ from sqlalchemy import Text, UniqueConstraint
 from sqlmodel import JSON, Column, Field, Relationship, SQLModel
 
 from langflow.schema import Data
+from langflow.services.database.models.base import (TablePrefixBase,
+                                                    get_table_name_with_prefix)
 
 if TYPE_CHECKING:
     from langflow.services.database.models import TransactionTable
     from langflow.services.database.models.folder import Folder
     from langflow.services.database.models.message import MessageTable
     from langflow.services.database.models.user import User
-    from langflow.services.database.models.vertex_builds.model import VertexBuildTable
+    from langflow.services.database.models.vertex_builds.model import \
+        VertexBuildTable
 
 HEX_COLOR_LENGTH = 7
 
 
-class FlowBase(SQLModel):
+class FlowBase(TablePrefixBase):
     name: str = Field(index=True)
     description: str | None = Field(default=None, sa_column=Column(Text, index=True, nullable=True))
     icon: str | None = Field(default=None, nullable=True)
@@ -158,13 +161,17 @@ class FlowBase(SQLModel):
 class Flow(FlowBase, table=True):  # type: ignore[call-arg]
     id: UUID = Field(default_factory=uuid4, primary_key=True, unique=True)
     data: dict | None = Field(default=None, sa_column=Column(JSON))
-    user_id: UUID | None = Field(index=True, foreign_key="user.id", nullable=True)
-    user: "User" = Relationship(back_populates="flows")
+    user_id: UUID | None = Field(index=True, foreign_key=f"{get_table_name_with_prefix('user')}.id", nullable=True)
+    user: "User" = Relationship(back_populates="flows", sa_relationship_kwargs={
+        "primaryjoin": "Flow.user_id == User.id"
+    })
     icon: str | None = Field(default=None, nullable=True)
     tags: list[str] | None = Field(sa_column=Column(JSON), default=[])
     locked: bool | None = Field(default=False, nullable=True)
-    folder_id: UUID | None = Field(default=None, foreign_key="folder.id", nullable=True, index=True)
-    folder: Optional["Folder"] = Relationship(back_populates="flows")
+    folder_id: UUID | None = Field(default=None, foreign_key=f"{get_table_name_with_prefix('folder')}.id", nullable=True, index=True)
+    folder: Optional["Folder"] = Relationship(back_populates="flows", sa_relationship_kwargs={
+        "primaryjoin": "Flow.folder_id == Folder.id"
+    })
     messages: list["MessageTable"] = Relationship(back_populates="flow")
     transactions: list["TransactionTable"] = Relationship(back_populates="flow")
     vertex_builds: list["VertexBuildTable"] = Relationship(back_populates="flow")

@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import anyio
+from langflow.services.database.models.base import get_table_name_with_prefix
 import sqlalchemy as sa
 from alembic import command, util
 from alembic.config import Config
@@ -104,7 +105,12 @@ class DatabaseService(Service):
                 "pool_size": self.settings_service.settings.pool_size,
                 "max_overflow": self.settings_service.settings.max_overflow,
             }
-            database_url = "postgresql+psycopg://" if url_components[0].startswith("postgresql") else url_components[0]
+            if url_components[0].startswith("postgresql"):
+                database_url = "postgresql+psycopg://"
+            elif url_components[0].startswith("mysql"):
+                database_url = "mysql+aiomysql://"
+            else:
+                database_url = url_components[0]+"://"
         database_url += url_components[1]
         return create_async_engine(
             database_url,
@@ -386,7 +392,7 @@ class DatabaseService(Service):
         inspector = inspect(connection)
         table_names = inspector.get_table_names()
         current_tables = ["flow", "user", "apikey", "folder", "message", "variable", "transaction", "vertex_build"]
-
+        current_tables = [get_table_name_with_prefix(table) for table in current_tables]
         if table_names and all(table in table_names for table in current_tables):
             logger.debug("Database and tables already exist")
             return

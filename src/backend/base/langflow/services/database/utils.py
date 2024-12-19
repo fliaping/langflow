@@ -35,6 +35,7 @@ async def initialize_database(*, fix_migration: bool = False) -> None:
         raise RuntimeError(msg) from exc
     try:
         await database_service.run_migrations(fix=fix_migration)
+        pass
     except CommandError as exc:
         # if "overlaps with other requested revisions" or "Can't locate revision identified by"
         # are not in the exception, we can't handle it

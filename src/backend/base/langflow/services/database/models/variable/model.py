@@ -3,8 +3,11 @@ from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
 from pydantic import ValidationInfo, field_validator
-from sqlmodel import JSON, Column, DateTime, Field, Relationship, SQLModel, func
+from sqlmodel import (JSON, Column, DateTime, Field, Relationship, SQLModel,
+                      func)
 
+from langflow.services.database.models.base import (TablePrefixBase,
+                                                    get_table_name_with_prefix)
 from langflow.services.variable.constants import CREDENTIAL_TYPE
 
 if TYPE_CHECKING:
@@ -15,7 +18,7 @@ def utc_now():
     return datetime.now(timezone.utc)
 
 
-class VariableBase(SQLModel):
+class VariableBase(TablePrefixBase):
     name: str = Field(description="Name of the variable")
     value: str = Field(description="Encrypted value of the variable")
     default_fields: list[str] | None = Field(sa_column=Column(JSON))
@@ -41,8 +44,10 @@ class Variable(VariableBase, table=True):  # type: ignore[call-arg]
     )
     default_fields: list[str] | None = Field(sa_column=Column(JSON))
     # foreign key to user table
-    user_id: UUID = Field(description="User ID associated with this variable", foreign_key="user.id")
-    user: "User" = Relationship(back_populates="variables")
+    user_id: UUID = Field(description="User ID associated with this variable", foreign_key=f"{get_table_name_with_prefix('user')}.id")
+    user: "User" = Relationship(back_populates="variables", sa_relationship_kwargs={
+        "primaryjoin": "Variable.user_id == User.id"
+    })
 
 
 class VariableCreate(VariableBase):

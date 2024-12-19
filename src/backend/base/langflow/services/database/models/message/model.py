@@ -10,13 +10,15 @@ from sqlmodel import JSON, Column, Field, Relationship, SQLModel
 from langflow.schema.content_block import ContentBlock
 from langflow.schema.properties import Properties
 from langflow.schema.validators import str_to_timestamp_validator
+from langflow.services.database.models.base import (TablePrefixBase,
+                                                    get_table_name_with_prefix)
 
 if TYPE_CHECKING:
     from langflow.schema.message import Message
     from langflow.services.database.models.flow.model import Flow
 
 
-class MessageBase(SQLModel):
+class MessageBase(TablePrefixBase):
     timestamp: Annotated[datetime, str_to_timestamp_validator] = Field(
         default_factory=lambda: datetime.now(timezone.utc)
     )
@@ -113,8 +115,10 @@ class MessageBase(SQLModel):
 class MessageTable(MessageBase, table=True):  # type: ignore[call-arg]
     __tablename__ = "message"
     id: UUID = Field(default_factory=uuid4, primary_key=True)
-    flow_id: UUID | None = Field(default=None, foreign_key="flow.id")
-    flow: "Flow" = Relationship(back_populates="messages")
+    flow_id: UUID | None = Field(default=None, foreign_key=f"{get_table_name_with_prefix('flow')}.id")
+    flow: "Flow" = Relationship(back_populates="messages", sa_relationship_kwargs={
+        "primaryjoin": "MessageTable.flow_id == Flow.id"
+    })
     files: list[str] = Field(sa_column=Column(JSON))
     properties: Properties = Field(default_factory=lambda: Properties().model_dump(), sa_column=Column(JSON))  # type: ignore[assignment]
     category: str = Field(sa_column=Column(Text))

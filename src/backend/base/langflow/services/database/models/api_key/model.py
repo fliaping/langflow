@@ -6,6 +6,8 @@ from pydantic import field_validator
 from sqlmodel import Column, DateTime, Field, Relationship, SQLModel, func
 
 from langflow.schema.serialize import UUIDstr
+from langflow.services.database.models.base import (TablePrefixBase,
+                                                    get_table_name_with_prefix)
 
 if TYPE_CHECKING:
     from langflow.services.database.models.user import User
@@ -15,7 +17,7 @@ def utc_now():
     return datetime.now(timezone.utc)
 
 
-class ApiKeyBase(SQLModel):
+class ApiKeyBase(TablePrefixBase):
     name: str | None = Field(index=True, nullable=True, default=None)
     last_used_at: datetime | None = Field(default=None, nullable=True)
     total_uses: int = Field(default=0)
@@ -30,9 +32,12 @@ class ApiKey(ApiKeyBase, table=True):  # type: ignore[call-arg]
     api_key: str = Field(index=True, unique=True)
     # User relationship
     # Delete API keys when user is deleted
-    user_id: UUIDstr = Field(index=True, foreign_key="user.id")
+    user_id: UUIDstr = Field(index=True, foreign_key=f"{get_table_name_with_prefix('user')}.id")
     user: "User" = Relationship(
         back_populates="api_keys",
+        sa_relationship_kwargs={
+            "primaryjoin": "ApiKey.user_id == User.id"
+        }
     )
 
 

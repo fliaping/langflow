@@ -172,7 +172,7 @@ def run(
     values: dict = {}
     if frame is not None:
         arguments, _, _, values = inspect.getargvalues(frame)
-        valid_args = [arg for arg in arguments if values[arg] is not None]
+        valid_args = [arg for arg in arguments if values[arg] is not None and not isinstance(values[arg],typer.models.OptionInfo)]
 
     for arg in valid_args:
         if arg == "components_path":

@@ -5,6 +5,7 @@ from uuid import UUID, uuid4
 from sqlmodel import Field, Relationship, SQLModel
 
 from langflow.schema.serialize import UUIDstr
+from langflow.services.database.models.base import TablePrefixBase
 
 if TYPE_CHECKING:
     from langflow.services.database.models.api_key import ApiKey
@@ -13,7 +14,8 @@ if TYPE_CHECKING:
     from langflow.services.database.models.variable import Variable
 
 
-class User(SQLModel, table=True):  # type: ignore[call-arg]
+
+class User(TablePrefixBase, table=True):  # type: ignore[call-arg]
     id: UUIDstr = Field(default_factory=uuid4, primary_key=True, unique=True)
     username: str = Field(index=True, unique=True)
     password: str = Field()
@@ -39,12 +41,12 @@ class User(SQLModel, table=True):  # type: ignore[call-arg]
     )
 
 
-class UserCreate(SQLModel):
+class UserCreate(TablePrefixBase):
     username: str = Field()
     password: str = Field()
 
 
-class UserRead(SQLModel):
+class UserRead(TablePrefixBase):
     id: UUID = Field(default_factory=uuid4)
     username: str = Field()
     profile_image: str | None = Field()
@@ -56,7 +58,7 @@ class UserRead(SQLModel):
     last_login_at: datetime | None = Field(nullable=True)
 
 
-class UserUpdate(SQLModel):
+class UserUpdate(TablePrefixBase):
     username: str | None = None
     profile_image: str | None = None
     password: str | None = None
