@@ -58,7 +58,7 @@ class VertexBuildBase(TablePrefixBase):
 
 
 class VertexBuildTable(VertexBuildBase, table=True):  # type: ignore[call-arg]
-    __tablename__ = "vertex_build"
+    __custom_table_name__ = "vertex_build"
     build_id: UUID | None = Field(default_factory=uuid4, primary_key=True)
     flow: "Flow" = Relationship(back_populates="vertex_builds", sa_relationship_kwargs={
         "primaryjoin": "VertexBuildTable.flow_id == Flow.id"

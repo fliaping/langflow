@@ -113,7 +113,7 @@ class MessageBase(TablePrefixBase):
 
 
 class MessageTable(MessageBase, table=True):  # type: ignore[call-arg]
-    __tablename__ = "message"
+    __custom_table_name__ = 'message'
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     flow_id: UUID | None = Field(default=None, foreign_key=f"{get_table_name_with_prefix('flow')}.id")
     flow: "Flow" = Relationship(back_populates="messages", sa_relationship_kwargs={

@@ -41,7 +41,7 @@ class TransactionBase(TablePrefixBase):
 
 
 class TransactionTable(TransactionBase, table=True):  # type: ignore[call-arg]
-    __tablename__ = "transaction"
+    __custom_table_name__ = "transaction"
     id: UUID | None = Field(default_factory=uuid4, primary_key=True)
     flow: "Flow" = Relationship(back_populates="transactions", sa_relationship_kwargs={
         "primaryjoin": "TransactionTable.flow_id == Flow.id"

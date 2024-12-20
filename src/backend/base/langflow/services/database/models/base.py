@@ -1,4 +1,5 @@
 import os
+from typing import Callable, ClassVar, Union
 
 import orjson
 from sqlalchemy.ext.declarative import declared_attr, has_inherited_table
@@ -28,6 +29,8 @@ def get_table_name_with_prefix(table_name: str) -> str:
 class TablePrefixBase(SQLModel):
     """带表名前缀的 SQLModel 基类，前缀从环境变量获取"""
     
+    __custom_table_name__: ClassVar[Union[str, Callable[..., str]]]
+    
     @declared_attr
     def __tablename__(cls) -> str:
         """
@@ -38,13 +41,13 @@ class TablePrefixBase(SQLModel):
         if has_inherited_table(cls):
             return None
         
-        # 如果没有显式定义，使用类名作为基础表名
-        base_tablename = cls.__name__.lower()
-        # 检查是否有显式定义的表名
-        if hasattr(cls, '_sa_class_manager'):
-            for key, value in cls._sa_class_manager.local_attrs.items():
-                if key == '__tablename__':
-                    base_tablename = value.value
+        # 检查子类是否定义了自定义表名属性
+        custom_table_name = getattr(cls, '__custom_table_name__', None)
+        if custom_table_name:
+            base_tablename = custom_table_name  # 使用子类自定义表名
+        else:
+            # 如果没有显式定义，使用类名作为基础表名
+            base_tablename = cls.__name__.lower()
         
         
         return get_table_name_with_prefix(base_tablename)
