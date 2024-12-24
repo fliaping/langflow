@@ -237,9 +237,12 @@ async def initialize_services(*, fix_migration: bool = False) -> None:
     # Test cache connection
     get_service(ServiceType.CACHE_SERVICE, default=CacheServiceFactory())
     # Setup the superuser
-    await initialize_database(fix_migration=fix_migration)
+    # 通过odp sidecar链接数据库，初始化时报错：InternalError: (pymysql.err.InternalError) Packet sequence number wrong - got 5 expected 1                                                                                 
+    #  (Background on this error at: https://sqlalche.me/e/20/2j85)  
+    # await initialize_database(fix_migration=fix_migration)
     db_service = get_db_service()
-    await db_service.initialize_alembic_log_file()
+    # 数据库无法直接变更，自动迁移也不需要
+    # await db_service.initialize_alembic_log_file()
     async with db_service.with_async_session() as session:
         settings_service = get_service(ServiceType.SETTINGS_SERVICE)
         await setup_superuser(settings_service, session)
